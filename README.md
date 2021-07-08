@@ -4,7 +4,13 @@ This demo will walk through a basic use-case with Crane 2, a tool for rehosting
 cloud workloads for Kubernetes. It seeks to highlight some of Crane's primary
 goals:
 
+
 * Compatible with vanilla k8s out-of-the-box
+
+> NOTE: As a first pass attempt to get something demo-able, we're going to be
+> using an openshift workload and tooling, and will aim to update this to remove
+> the requirement.
+
 * No requirement of elevated privileges; application owners can migrate their
 own applications
 * Extraction and discovery of all resources from source namespaces
@@ -40,3 +46,10 @@ PATH for regular usage:
 ## Workflow
 
 Now that we have the Crane binary, we're ready to start migrating our app.
+
+For this demo, we're going to use a very simple nginx example application. Be
+sure you're logged into your source cluster and let's deploy the example:
+
+`oc create -f ./nginx-example`
+
+
