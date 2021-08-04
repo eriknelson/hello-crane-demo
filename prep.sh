@@ -6,8 +6,10 @@ mkdir -p $BUILD_DIR
 mkdir -p $BIN_DIR
 mkdir -p $PLUGIN_OUT_DIR
 
-git clone --depth=1 https://github.com/konveyor/crane.git $BUILD_DIR/crane
+#git clone --depth=1 https://github.com/konveyor/crane.git $BUILD_DIR/crane
+git clone https://github.com/konveyor/crane.git $BUILD_DIR/crane
 cd $BUILD_DIR/crane
+git checkout 8c032cdf249d05e2828943119514ef7b5b34e0bb
 go build -o $BIN_DIR/crane
 
 plugins=$(ls -1 $_dir/plugins)
