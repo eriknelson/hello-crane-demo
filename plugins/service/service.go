@@ -33,6 +33,14 @@ func Run(u *unstructured.Unstructured, extras map[string]string) (transform.Plug
 			intPatch, err = jsonpatch.DecodePatch([]byte(patchJSON))
 			patch = append(patch, intPatch...)
 		}
+
+		if !IsServiceClusterIPNone(*u) {
+			patchJSON := fmt.Sprintf(`[
+{ "op": "remove", "path": "/spec/clusterIPs"}
+]`)
+			intPatch, err = jsonpatch.DecodePatch([]byte(patchJSON))
+			patch = append(patch, intPatch...)
+		}
 	}
 	return transform.PluginResponse{
 		Version:    "v1",
@@ -83,4 +91,26 @@ func IsServiceClusterIPNone(u unstructured.Unstructured) bool {
 		return false
 	}
 	return clusterIP == "None"
+}
+
+func IsServiceClusterIPsNone(u unstructured.Unstructured) bool {
+	if u.GetKind() != "Service" {
+		return false
+	}
+	// Get Spec
+	spec, ok := u.UnstructuredContent()["spec"]
+	if !ok {
+		return false
+	}
+
+	specMap, ok := spec.(map[string]interface{})
+	if !ok {
+		return false
+	}
+	// Get type
+	clusterIPs, ok := specMap["clusterIPs"]
+	if !ok {
+		return false
+	}
+	return clusterIPs == "None"
 }
