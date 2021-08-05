@@ -7,17 +7,17 @@ mkdir -p $BIN_DIR
 mkdir -p $PLUGIN_OUT_DIR
 
 git clone https://github.com/konveyor/crane.git $BUILD_DIR/crane
-cd $BUILD_DIR/crane
-#git checkout 8c032cdf249d05e2828943119514ef7b5b34e0bb
+pushd $BUILD_DIR/crane
 go build -o $BIN_DIR/crane
+popd
 
 plugins=$(ls -1 $_dir/plugins)
 shopt -s nullglob
 plugins=($_dir/plugins/*/)
 shopt -u nullglob
-for p in "${plugins[@]}"; do
-  pluginMain="$(ls $p)"
-  pushd $p
-  go build -o $PLUGIN_OUT_DIR $pluginMain
+for pluginDir in "${plugins[@]}"; do
+  pluginName=$(echo $p | perl -ne '/.*\/(.*)\/$/ && print "$1"')
+  pushd $pluginDir
+  go build -o $PLUGIN_OUT_DIR/$pluginName $pluginDir
   popd
 done
