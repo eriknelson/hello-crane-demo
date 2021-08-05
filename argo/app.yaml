@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-hello-crane
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: hello-crane
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    directory:
+      recurse: true
+    path: app
+    repoURL: https://github.com/eriknelson/hello-crane-demo-app.git
+    targetRevision: master
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
