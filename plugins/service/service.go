@@ -41,6 +41,16 @@ func Run(u *unstructured.Unstructured, extras map[string]string) (transform.Plug
 			intPatch, err = jsonpatch.DecodePatch([]byte(patchJSON))
 			patch = append(patch, intPatch...)
 		}
+
+		// HACK: Just need to make this go away, smarter ways to do this like making
+		// sure its even present. Also probably needs some amount of processing
+		// to read through each of the port structs and to check if nodePort is
+		// present and then strip. This is just hardcoded for demo purposes.
+		patchJSON := fmt.Sprintf(`[
+			{ "op": "remove", "path": "/spec/ports/0/nodePort"}
+		]`)
+		intPatch, err = jsonpatch.DecodePatch([]byte(patchJSON))
+		patch = append(patch, intPatch...)
 	}
 	return transform.PluginResponse{
 		Version:    "v1",
