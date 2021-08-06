@@ -4,4 +4,9 @@ crane export --export-dir /tmp/export
 crane transform --export-dir /tmp/export/resources --plugin-dir /opt --transform-dir /tmp/transform
 crane apply --export-dir /tmp/export/resources --transform-dir /tmp/transform --output-dir /repo
 
-
+Required args
+Plugin debug experience
+Default sane behavior
+Accept arbitary JSONPatch as an input, maybe apply it to specific GVK as a passthrough
+Access to logger within the plugin?
+What to return in the event of errors?
