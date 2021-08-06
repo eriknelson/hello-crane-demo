@@ -1,5 +1,6 @@
 #!/bin/bash
 _dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $_dir/var.sh
 
 ./bin/crane transform \
   --export-dir=$_dir/export/resources \
