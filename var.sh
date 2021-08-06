@@ -6,3 +6,4 @@ PLUGIN_OUT_DIR="$BIN_DIR/plugins"
 EXPORT_DIR="$_dir/export"
 TRANSFORM_DIR="$_dir/transform"
 OUTPUT_DIR="$_dir/output"
+DEST_NAMESPACE=nginx-example-foo
