@@ -19,22 +19,6 @@ metadata:
   name: nginx-example
   labels:
     app: nginx
-
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: nginx-logs
-  namespace: nginx-example
-  labels:
-    app: nginx
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 50Mi
-
 ---
 apiVersion: "apps/v1"
 kind: Deployment
@@ -51,20 +35,11 @@ spec:
       labels:
         app: nginx
     spec:
-      volumes:
-        - name: nginx-logs
-          persistentVolumeClaim:
-           claimName: nginx-logs
       containers:
       - image: quay.io/eriknelson/openshift-nginx
         name: nginx
         ports:
         - containerPort: 8081
-        volumeMounts:
-          - mountPath: "/var/log/nginx"
-            name: nginx-logs
-            readOnly: false
-
 ---
 apiVersion: v1
 kind: Service
@@ -80,20 +55,25 @@ spec:
   selector:
     app: nginx
   type: LoadBalancer
-
 ---
-apiVersion: route.openshift.io/v1
-kind: Route
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: my-nginx
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+  name: nginx-example
   namespace: nginx-example
   labels:
     app: nginx
-    service: my-nginx
 spec:
-  to:
-    kind: Service
-    name: my-nginx
-  port:
-    targetPort: 8081
-
+  rules:
+  - host: nginx-example.10.19.2.21.nip.io
+    http:
+      paths:
+      - backend:
+          service:
+            name: my-nginx
+            port:
+              number: 8081
+        path: /
+        pathType: Prefix
