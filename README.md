@@ -199,4 +199,28 @@ and the `Status` has beben removed, for example.
 
 ### Gitops Integration
 
-TODO
+At this point, Crane 2 has done its job, and we have an environment agnostic
+bundle of k8s resources that we could use `kubectl apply -f ./output/nginx-example`
+on to instantiate in whatever cluster that our `KUBECONFIG` points to. However,
+let's take the opportunity to get this into a git repository, and then get that
+integrated with a CD tool like Argo CD. This is how Crane 2 can help onboard
+users into best practes using Gitops that unlocks the ability to be truly fluid
+and portable.
+
+In my cluster, I have OpenShift Gitops installed (OpenShift's flavor of ArgoCD),
+and we have an `argo/` directory with a couple of resources inside of it. The first
+is the destination namespace `nginx-example-foo` so we have a place to create our
+objects, and the second is an Argo `Application`. This resource tells Argo about
+my git repository and grants it access to be able to monitor my repo, and deploy
+it to my desired location.
+
+I'm going to create a github repo and commit the resources that Crane 2 output to
+that repository in an `app` directory that the `Application` is configured to
+look for.
+
+Before pushing to that repository, I'm going to `oc apply -f argo` to create
+that `Application`, and you'll see the `Application` get created in the Argo UI.
+It will try to reconcile this repo, but of course, since there's nothing in the
+repo yet, it's going to fail to deploy. However, upon pushing `nginx-example-foo`,
+ArgoCD will recognize this, reconcile the contents of the resository, and you'll
+see your app deployed into the target cluster.
