@@ -30,7 +30,7 @@ First thing you need to do is ensure your workstation is set up to build go
 projects. Currently Crane and its plugins are build from source, but in the
 future we expect to distribute the binaries themselves, and have a mechanism
 that will easily allow users to install community plugins, as well as their own
-custom plugins.
+custom plugins ([RFC document](https://github.com/konveyor/enhancements/pull/41)).
 
 To get started, you can simply run the `./prep.sh` script. This script will
 create two directories: a `build/` dir with build artifacts, and a `bin/` directory
@@ -60,6 +60,11 @@ large scale migrations. It's directly something we've learned thanks to Crane 1.
 > your context such that you're authenticated with your source cluster before
 > continuing.
 
+For ease of use, this project wraps these steps and their details within helper
+scripts: `export.sh`, `transform.sh`, and `apply.sh`. This illustrates the
+pipeline pattern, and is clearly demonstrated by the `pipeline.sh` script, what
+will run each task in sequence.
+
 ### Export
 
 The first thing you want to do with crane is to export everything within your
@@ -67,7 +72,13 @@ application namespace. Crane will discover all the API resources in-use using
 the the k8s discovery API, and will export them out of the API server to your
 local disk:
 
-`./bin/crane export --namespace=nginx-example --export-dir=export`
+**export.sh**
+```
+#!/bin/bash
+_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+./bin/crane export --namespace=nginx-example --export-dir=export
+```
+
 
 You'll find two directories within the export dir. The first is a `failures/`
 directory for you to be able to inspect any errors that occurred during the
@@ -88,35 +99,68 @@ match your source environment.
 * Applying custom labels or annotation to your resources during the migration
 
 A lot of these reasons are specific to your environment, so crane is designed
-to allow to be totally customizable. The transform command accepts a "plugins"
+to allow for total customization. The transform command accepts a "plugins"
 directory argument. Each plugin is an executable that has a well defined stdin/out
 interface, so you can easily write your own, or install and use those that have
-been published and are generically useful. In our case, we're going to use
-three plugins: an `openshift` plugin that will handle OpenShift specific details
-like clearing the host on a `Route` resource so that it can be regenerated in
-the target environment, a `whiteout-pods` plugin that will remove the pods from
-the resources that will be imported (we want our higher level resources to recreate
-the pods naturally in the environment, since they're spawned and owned by a
-Deployment), and finally we have a `status-removal` that will strip the status
-from the resources since it's not desired on import.
+been published and are generically useful. We're going to use several plugins to
+help mutate the data into an agnostic state:
+
+* **hc-whiteout**: This is a custom plugin written to whiteout (read: skip),
+certain kinds of resources that we know aren't gonig to be needed in the target.
+* **pvc**: Stripping PVCs of their environment specifics to ensure they can be
+satisfied in an independent manner on the target side.
+* **route**: This is an OpenShift specific plugin that handles removing host
+specific information.
+* **service**: Similar to the OpenShift plugin, but for k8s services.
+* **skip-owned**: This plugin eliminates resources that are derivatives of their
+owner. This is a very common pattern in Kubernetes, i.e. Deployments spawn Pods.
+We only want to restore the master resource and allow it to recreate it's owned
+Pods.
+* **spec-ns**: This plugin illustrates the acceptance of plugin arguments. In this
+case, I'm going to provide a *new* destination namespace where I want my resources
+to be created, and this plugin will handle that.
+* **status-removal**: Finally, we're going to strip all of the status from the
+objects, since `Status` is really only relevant when a resource as been instantiated.
+
+It's likely Crane 2 will ship with most of the shared functionality that we know
+many people are likely going to need as part of a "Core" package of functionality
+that will be available out of the box.
+
+> NOTE: Much of the logic found in these plugins comes from Crane 1.x and the
+> Velero plugins that were used to handle these types of corner cases, although
+> sometimes there were some limitations around the data that we were able to
+> use to make decisions. Here, we have full access to the input resources.
 
 Think of the transform command as a function that accepts the set of exported
 resources you discovered initially, plus a set of plugins that are applied to
-each of those resources. It's output is going to be a diretory with a set of
+each of those resources. Its output is going to be a diretory with a set of
 "transform" files that describe the mutation that should be applied to the
 original resources before their final import. These mutations are expressed with
-the [JSONPatch](https://jsonpatch.com) format.
+the [JSONPatch](https://jsonpatch.com) format, are human readable, and easily
+hackable.
 
 Let's run the transform command to generate our transform files:
 
-`./bin/crane transform --export-dir=./export/resources --plugin-dir=./bin/plugins --transform-dir=./transform`
+**transform.sh**
+
+```
+#!/bin/bash
+_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $_dir/var.sh # Source some configuration
+
+./bin/crane transform \
+  --export-dir=$_dir/export/resources \
+  --plugin-dir=$_dir/bin/plugins \
+  --transform-dir=$_dir/transform \
+  --optional-flags="dest-namespace=$DEST_NAMESPACE"
+```
 
 Looking at the output directory, we see a directory structure organized by
 namespace, with a set of the transform files to be applied. Taking a look at
 the route transform:
 
 ```
-[{"op":"remove","path":"/spec/host"},{"op":"remove","path":"/status"}]
+[{"op":"remove","path":"/spec/host"},{"op":"remove","path":"/status", /* SNIP */}]
 ```
 
 We can see a couple of mutations to be applied, as determined by the plugins.
@@ -137,11 +181,21 @@ and generate the set of k8s resources that we'll ultimately want to deploy to
 our target cluster. These resources could be imported into a gitops pipeline
 and deployed via a tool like argo, or `kubectl create -f` directly.
 
-`./bin/crane apply --export-dir=./export/resources --transform-dir=./transform --output-dir=./output`
+**transform.sh**
+```
+#!/bin/bash
+_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-Note the absence of a Pod, since our `whiteout-pods` plugins removed them from
-the output resources. Similarly, the host has been snipped from the spec in
-the openshift Route, and the status has been stripped from all the resources.
+./bin/crane apply \
+  --export-dir=$_dir/export/resources \
+  --transform-dir=$_dir/transform \
+  --output-dir=$_dir/output
+```
+
+Comparing the resources found in the `export` directory to those found in the
+`output` directory, you'll see resources skipped, along with all of the mutations
+applied to the input  resources. The host has been stripped from the `Route`,
+and the `Status` has beben removed, for example.
 
 ### Gitops Integration
 
