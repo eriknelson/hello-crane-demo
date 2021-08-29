@@ -10,3 +10,20 @@ Default sane behavior
 Accept arbitary JSONPatch as an input, maybe apply it to specific GVK as a passthrough
 Access to logger within the plugin?
 What to return in the event of errors?
+
+---
+Transfer
+
+pvc-namespace argument is not clear, what is this actually referring
+to? I expected the namespaces to be implied by the contexts?
+
+The logs are not clear about what pods are not ready? Is it on
+the source? Target?
+
+# k logs rsync-wrpvs -c rsync
+2021/08/26 01:41:21 [102] rsync: server sent "HTTP/1.1 400 Bad request" rather than greeting
+2021/08/26 01:41:21 [102] rsync error: error starting client-server protocol (code 5) at main.c(1657) [sender=3.1.3]
+rsync: server sent "HTTP/1.1 400 Bad request" rather than greeting
+rsync error: error starting client-server protocol (code 5) at main.c(1657) [sender=3.1.3]
+
+this is in the source
