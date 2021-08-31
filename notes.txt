@@ -1,3 +1,71 @@
+################################################################################
+# Inventory
+################################################################################
+
+./bin/crane export
+
+- These endpoints do not have ownerReferences, despite them being derived by
+the Service?
+
+I'm finding I have to dump the export directory and basically manually whitelist
+a lot of things.
+
+I need to be able to log from plugins, how do we want people to do that?
+Well defined interface that tells the main process: "log this"?
+
+Add remove status to kube plugin
+
+What about the root-ca configmap?
+
+# ./bin/crane transfer-pvc --skip-quiesce --local --source-context=ie --source-pvc-name=data-inventory-postgresql-0 --destination-pvc-namespace=inventory-erik-tgt
+2021/08/31 14:57:15 services "data-inventory-postgresql-0" already existsunable to create endpoint
+
+RoleBinding requires me to strip a lot of stuff that causes argo to not want
+to reconcile my rolebinding
+
+################################################################################
+Need:
+        ├── ConfigMap_inventory-erik_inventory-config.yaml
+        ├── ConfigMap_inventory-erik_kube-root-ca.crt.yaml
+        ├── Deployment_inventory-erik_inventory.yaml
+        ├── Ingress_inventory-erik_inventory.yaml
+        ├── RoleBinding_inventory-erik_default-view.yaml
+        ├── Secret_inventory-erik_inventory-postgresql.yaml
+        ├── Secret_inventory-erik_inventory-secret.yaml
+        ├── Service_inventory-erik_inventory-postgresql-headless.yaml
+        ├── Service_inventory-erik_inventory-postgresql.yaml
+        ├── Service_inventory-erik_inventory.yaml
+        └── StatefulSet_inventory-erik_inventory-postgresql.yaml
+Drop:
+-> Derived from StatefulSet
+X        ├── ControllerRevision_inventory-erik_inventory-postgresql-67fd675779.yaml
+
+-> Derived from Service
+X        ├── Endpoints_inventory-erik_inventory-postgresql-headless.yaml
+X        ├── Endpoints_inventory-erik_inventory-postgresql.yaml
+X        ├── Endpoints_inventory-erik_inventory.yaml
+X        ├── EndpointSlice_inventory-erik_inventory-6m72v.yaml
+X        ├── EndpointSlice_inventory-erik_inventory-postgresql-headless-bwgp2.yaml
+X        ├── EndpointSlice_inventory-erik_inventory-postgresql-headless-kthtw.yaml
+X        ├── EndpointSlice_inventory-erik_inventory-postgresql-hjcq6.yaml
+
+-> Derived from StatefulSet
+        ├── PersistentVolumeClaim_inventory-erik_data-inventory-postgresql-0.yaml
+
+-> Derived from StatefulSet,Deployment
+X        ├── Pod_inventory-erik_inventory-548b54bf7c-ptckb.yaml
+X        ├── Pod_inventory-erik_inventory-postgresql-0.yaml
+X        ├── ReplicaSet_inventory-erik_inventory-548b54bf7c.yaml
+
+-> Derived from Deployment indirectly? (Because of SA for the Pod?)
+        ├── Secret_inventory-erik_default-token-ktt5l.yaml
+X        ├── ServiceAccount_inventory-erik_default.yaml
+
+-> How do we handle helm objects? Strip for now?
+        ├── Secret_inventory-erik_sh.helm.release.v1.inventory.v1.yaml
+
+################################################################################
+
 https://github.com/cooktheryan/gitops-primer/tree/main/extract/plugins
 
 crane export --export-dir /tmp/export
