@@ -6,10 +6,11 @@ import (
 	"github.com/konveyor/crane-lib/transform/cli"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sort"
+	"strings"
 )
 
 func main() {
-	cli.RunAndExit(cli.NewCustomPlugin("HelloCraneWhiteout", "v1", nil, Run))
+	cli.RunAndExit(cli.NewCustomPlugin("InventoryWhiteout", "v1", nil, Run))
 }
 
 func contains(s []string, searchterm string) bool {
@@ -27,19 +28,32 @@ func Run(u *unstructured.Unstructured, extras map[string]string) (transform.Plug
 	// plugin and follow this, it's likely you'll end up erasing important instances.
 	whiteoutKinds := []string{
 		"Endpoints",
-		"ClusterServiceVersion",
 		"EndpointSlice",
-		"ConfigMap",
-		"RoleBinding",
 		"ServiceAccount",
-		"Secret",
+		"ControllerRevision",
+		"PersistentVolumeClaim",
 	}
+	whiteoutNames := []string{
+		"default-token",
+		"helm",
+	}
+	// I *think* the Pod and ReplicaSet will both be stripped by the ownerReference
+	// one
 
 	sort.Strings(whiteoutKinds)
 
 	kind := u.GetKind()
 	if contains(whiteoutKinds, kind) {
 		whiteout = true
+	}
+
+	name := u.GetName()
+
+	for _, wn := range whiteoutNames {
+		if strings.Contains(name, wn) {
+			whiteout = true
+			break
+		}
 	}
 
 	return transform.PluginResponse{
