@@ -36,6 +36,7 @@ func Run(u *unstructured.Unstructured, extras map[string]string) (transform.Plug
 	whiteoutNames := []string{
 		"default-token",
 		"helm",
+		"root-ca",
 	}
 	// I *think* the Pod and ReplicaSet will both be stripped by the ownerReference
 	// one
