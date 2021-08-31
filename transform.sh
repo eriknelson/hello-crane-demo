@@ -6,4 +6,4 @@ source $_dir/var.sh
   --export-dir=$_dir/export/resources \
   --plugin-dir=$_dir/bin/plugins \
   --transform-dir=$_dir/transform \
-  --optional-flags="dest-namespace=$DEST_NAMESPACE"
+  --optional-flags="dest-namespace=$DEST_NAMESPACE;ingress-host=$INGRESS_HOST"
