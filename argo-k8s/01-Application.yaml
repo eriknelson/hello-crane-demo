@@ -1,18 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nginx-example-foo
+  name: inventory-erik-tgt
   namespace: argocd
 spec:
   destination:
-    namespace: nginx-example-foo
+    namespace: inventory-erik-tgt
     server: https://kubernetes.default.svc
   project: default
   source:
     directory:
       recurse: true
-    path: app
-    repoURL: https://github.com/eriknelson/nginx-example-foo.git
+    path: inventory-erik
+    repoURL: https://github.com/eriknelson/inventory-erik-tgt.git
     targetRevision: master
   syncPolicy:
     automated:
